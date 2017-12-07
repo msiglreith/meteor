@@ -1,0 +1,8 @@
+[package]
+name = "meteor"
+version = "0.1.0"
+authors = ["msiglreith <m.siglreith@gmail.com>"]
+workspace = ".."
+
+[dependencies]
+quote = "0.3"

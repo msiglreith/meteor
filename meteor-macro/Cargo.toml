@@ -1,0 +1,14 @@
+[package]
+name = "meteor-macro"
+version = "0.1.0"
+authors = ["msiglreith <m.siglreith@gmail.com>"]
+workspace = ".."
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = { path = "../../syn" , features = ["full", "extra-traits"] } # TODO
+synom = { path = "../../syn/synom" } # TODO
+quote = { git = 'https://github.com/dtolnay/quote'}
+proc-macro2 = "0.1"

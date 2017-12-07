@@ -1,0 +1,13 @@
+[package]
+name = "meteor-kernel"
+version = "0.1.0"
+authors = ["msiglreith <m.siglreith@gmail.com>"]
+workspace = ".."
+
+[lib]
+proc-macro = true
+
+[dependencies]
+meteor = { path = "../libmeteor" }
+meteor-macro = { path = "../meteor-macro" }
+quote = "0.3"

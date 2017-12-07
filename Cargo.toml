@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "libmeteor",
+    "meteor-example",
+    "meteor-kernel",
+    "meteor-macro",
+]
