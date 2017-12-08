@@ -83,24 +83,22 @@ pub fn staged(_: TokenStream, input: TokenStream) -> TokenStream {
         pub fn #outer_ident (input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             let generator = #func;
 
-            let gen_ident = quote! { #gen_ident }.to_string();
+            // let gen_ident = quote! { #gen_ident }.to_string();
             let gen_fn = generator();
             let input = input.to_string();
             let fn_impl = format!("
                 {{
                     || {{
-                        // TODO
-
+                        {}
                     }}
                 }}
-            ");
+            ", gen_fn.to_string());
             // panic!("{:?}", fn_impl.to_string());
             fn_impl.to_string().parse().unwrap()
         }
     };
 
-    // panic!("{:?}", outer_item);
-
+    println!("{}", outer_item.to_string());
     outer_item.to_string().parse().unwrap()
 }
 
@@ -112,6 +110,7 @@ fn virtualize(block: &syn::Block) -> Tokens {
         {
         let mut __tokens = ::quote::Tokens::new();
         #tokens
+        __tokens
         }
     };
 
@@ -774,4 +773,3 @@ fn wrap_bare_struct(tokens: &mut Tokens, e: &Expr) {
     }
     */
 }
-

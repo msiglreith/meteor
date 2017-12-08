@@ -7,7 +7,7 @@ extern crate meteor;
 extern crate meteor_macro;
 
 use meteor::*;
-use metar_macro::staged;
+use meteor_macro::staged;
 use proc_macro::TokenStream;
 
 #[staged]
