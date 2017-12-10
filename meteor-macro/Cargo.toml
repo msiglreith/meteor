@@ -12,3 +12,4 @@ syn = { path = "../../syn" , features = ["full", "extra-traits"] } # TODO
 synom = { path = "../../syn/synom" } # TODO
 quote = { git = 'https://github.com/dtolnay/quote'}
 proc-macro2 = "0.1"
+rustfmt-nightly = "*"

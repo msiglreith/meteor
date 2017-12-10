@@ -7,6 +7,7 @@ extern crate synom;
 extern crate syn;
 #[macro_use]
 extern crate quote;
+extern crate rustfmt_nightly as rustfmt;
 
 use proc_macro::TokenStream;
 use proc_macro2::Term;
@@ -14,6 +15,7 @@ use syn::*;
 use syn::FilterAttrs;
 use quote::Tokens;
 use quote::ToTokens;
+use std::str;
 
 #[proc_macro_attribute]
 pub fn staged(_: TokenStream, input: TokenStream) -> TokenStream {
@@ -22,8 +24,6 @@ pub fn staged(_: TokenStream, input: TokenStream) -> TokenStream {
         Ok(item) => item,
         Err(err) => panic!("{:?}", err),
     };
-
-    // println!("{:#?}", item);
 
     let (mut item, block) = match item {
         Item::Fn(fn_item) => {
@@ -74,9 +74,10 @@ pub fn staged(_: TokenStream, input: TokenStream) -> TokenStream {
     let outer_ident = item.ident.clone();
     let gen_ident = syn::Ident::new(Term::intern(&(item.ident.as_ref().to_owned() + "_gen")), Span::default());
 
-    let func = quote!{ || #block };
+    let fn_inputs = &item.decl.inputs;
+    let func = quote!{ | #fn_inputs | #block };
 
-    println!("{:?}", func.to_string());
+    // println!("{:?}", func.to_string());
 
     let outer_item = quote! {
         #(#outer_attrs)*
@@ -92,21 +93,41 @@ pub fn staged(_: TokenStream, input: TokenStream) -> TokenStream {
                         {}
                     }}
                 }}
-            ", gen_fn.to_string());
+            ", input, gen_fn.to_string());
             // panic!("{:?}", fn_impl.to_string());
             fn_impl.to_string().parse().unwrap()
         }
     };
 
-    println!("{}", outer_item.to_string());
+    println!("Generated: {}", formatting(&outer_item.to_string()));
     outer_item.to_string().parse().unwrap()
+}
+
+fn formatting(input: &str) -> String {
+    let string = input.to_string();
+    let config = rustfmt::config::Config::default();
+    let res = rustfmt::format_input::<Vec<u8>>(
+        rustfmt::Input::Text(string),
+        &config,
+        None,
+    );
+
+    match res {
+        Ok((summary, file_map, report)) => {
+            file_map[0].1.to_string()
+        }
+        Err(err) => {
+            println!("{:?}", err);
+            "".into()
+        }
+    }
 }
 
 fn virtualize(block: &syn::Block) -> Tokens {
     let mut tokens = Tokens::new();
     block.virtualize(&mut tokens);
 
-    let tokens = quote! {
+    let virtualized = quote! {
         {
         let mut __tokens = ::quote::Tokens::new();
         #tokens
@@ -114,8 +135,16 @@ fn virtualize(block: &syn::Block) -> Tokens {
         }
     };
 
-    println!("virtualized: {}", tokens.to_string());
-    tokens
+    let wrapper_tokens = quote! {
+        fn foo() {
+        let mut __tokens = ::quote::Tokens::new();
+        #tokens
+        __tokens
+        }
+    };
+
+    println!("virtualized: {}", formatting(&wrapper_tokens.to_string()));
+    virtualized
 }
 
 trait Virtualize {
