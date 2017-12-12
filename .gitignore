@@ -1,3 +1,5 @@
 /target/
+/libmeteor/target/
+/libmeteor-macro/target/
 **/*.rs.bk
 Cargo.lock
