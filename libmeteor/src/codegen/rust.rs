@@ -59,10 +59,11 @@ where
     }
 }
 
-impl<T, U> __PartialEq<Repr<U>, Expr<bool>> for Repr<T>
+impl<T, U> __PartialEq<Repr<U>> for Repr<T>
 where
     T: PartialEq<U>,
 {
+    type Output = Expr<bool>;
     fn eq(&self, repr: &Repr<U>) -> Expr<bool> {
         let lhs = &self.0;
         let rhs = &repr.0;
@@ -70,7 +71,8 @@ where
     }
 }
 
-impl __PartialEq<Expr<bool>, Expr<bool>> for Repr<bool> {
+impl __PartialEq<Expr<bool>> for Repr<bool> {
+    type Output = Expr<bool>;
     fn eq(&self, expr: &Expr<bool>) -> Expr<bool> {
         let lhs = &self.0;
         let rhs = &expr.0;

@@ -15,10 +15,11 @@ where
     }
 }
 
-impl<T, RHS> __PartialEq<RHS, bool> for T
+impl<T, RHS> __PartialEq<RHS> for T
 where
     T: PartialEq<RHS>,
 {
+    type Output = bool;
     fn eq(&self, rhs: &RHS) -> bool {
         PartialEq::eq(self, rhs)
     }

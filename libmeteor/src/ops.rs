@@ -4,12 +4,11 @@ pub trait __Not {
     fn not(self) -> Self::Output;
 }
 
-pub trait __PartialEq<RHS, Ret>
-where
-    Ret: __Not<Output=Ret>,
-{
-    fn eq(&self, &RHS) -> Ret;
-    fn ne(&self, other: &RHS) -> Ret { self.eq(other).not() }
+pub trait __PartialEq<RHS> {
+    type Output: __Not<Output=Self::Output>;
+
+    fn eq(&self, &RHS) -> Self::Output;
+    fn ne(&self, other: &RHS) -> Self::Output { self.eq(other).not() }
 }
 
 pub trait __Assign<RHS, Ret> {
