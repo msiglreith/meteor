@@ -15,6 +15,16 @@ pub trait __Assign<RHS, Ret> {
     fn assign(self, RHS) -> Ret;
 }
 
+pub trait __Add<RHS> {
+    type Output;
+    fn add(self, rhs: RHS) -> Self::Output;
+}
+
+pub trait __Sub<RHS> {
+    type Output;
+    fn sub(self, rhs: RHS) -> Self::Output;
+}
+
 pub trait __Ref<'a, T, Ret> {
     fn __ref(&'a self) -> Ret;
 }
