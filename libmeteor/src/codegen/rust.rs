@@ -1,3 +1,4 @@
+//! Virtualization implementation for 'staged' Rust
 
 use quote::Tokens;
 use std::marker::PhantomData;
@@ -47,7 +48,6 @@ where
     }
 }
 
-
 impl<T> __Not for Expr<T>
 where
     T: Not,
@@ -63,7 +63,7 @@ impl<T, U> __PartialEq<Repr<U>, Expr<bool>> for Repr<T>
 where
     T: PartialEq<U>,
 {
-    fn eq(&self, repr: Repr<U>) -> Expr<bool> {
+    fn eq(&self, repr: &Repr<U>) -> Expr<bool> {
         let lhs = &self.0;
         let rhs = &repr.0;
         Expr::new(quote! { #lhs == #rhs })
@@ -71,7 +71,7 @@ where
 }
 
 impl __PartialEq<Expr<bool>, Expr<bool>> for Repr<bool> {
-    fn eq(&self, expr: Expr<bool>) -> Expr<bool> {
+    fn eq(&self, expr: &Expr<bool>) -> Expr<bool> {
         let lhs = &self.0;
         let rhs = &expr.0;
         Expr::new(quote! { #lhs == #rhs })

@@ -3,8 +3,8 @@
 #[macro_use]
 extern crate quote;
 
+pub mod codegen;
 pub mod ops;
-pub mod rust;
 
 use quote::Tokens;
 
