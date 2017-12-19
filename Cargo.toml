@@ -2,6 +2,7 @@
 members = [
     "libmeteor",
     "libmeteor-macro",
+    "libmeteor-virtualize",
     "meteor-example",
     "meteor-kernel",
 ]

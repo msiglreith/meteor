@@ -13,14 +13,14 @@ where
     fn ne(&self, other: RHS) -> Ret { self.eq(other).not() }
 }
 
-pub trait __Assign<RHS> {
-    fn assign(self, RHS) -> Stmt;
+pub trait __Assign<RHS, Ret> {
+    fn assign(self, RHS) -> Ret;
 }
 
-pub trait __Ref<T> {
-    fn __ref<'a>(&'a self) -> Expr<&'a T>;
+pub trait __Ref<'a, T, Ret> {
+    fn __ref(&'a self) -> Ret;
 }
 
-pub trait __RefMut<T> {
-    fn __mut<'a>(&'a mut self) -> Expr<&'a mut T>;
+pub trait __RefMut<'a, T, Ret> {
+    fn __mut(&'a mut self) -> Ret;
 }

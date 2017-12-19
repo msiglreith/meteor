@@ -9,5 +9,5 @@ proc-macro = true
 
 [dependencies]
 meteor = { path = "../libmeteor" }
-meteor-macro = { path = "../meteor-macro" }
+meteor-macro = { path = "../libmeteor-macro" }
 quote = "0.3"

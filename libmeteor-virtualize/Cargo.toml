@@ -1,0 +1,9 @@
+[package]
+name = "meteor-virtualize"
+version = "0.1.0"
+authors = ["msiglreith <m.siglreith@gmail.com>"]
+workspace = ".."
+
+[dependencies]
+quote = "0.3"
+proc-macro2 = "0.1"

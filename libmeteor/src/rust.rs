@@ -3,6 +3,7 @@ use quote::Tokens;
 use std::marker::PhantomData;
 use std::ops::Not;
 
+use __ExprBlock;
 use ops::*;
 
 pub struct Lit<T>(Tokens, PhantomData<T>);
@@ -77,7 +78,7 @@ impl __PartialEq<Expr<bool>, Expr<bool>> for Repr<bool> {
     }
 }
 
-impl<T> __Assign<Repr<T>> for Repr<T> {
+impl<T> __Assign<Repr<T>, Stmt> for Repr<T> {
     fn assign(self, rhs: Repr<T>) -> Stmt {
         let lhs = self.0;
         let rhs = rhs.0;
@@ -85,7 +86,7 @@ impl<T> __Assign<Repr<T>> for Repr<T> {
     }
 }
 
-impl<T> __Assign<Expr<T>> for Repr<T> {
+impl<T> __Assign<Expr<T>, Stmt> for Repr<T> {
     fn assign(self, rhs: Expr<T>) -> Stmt {
         let lhs = self.0;
         let rhs = rhs.0;
@@ -93,15 +94,15 @@ impl<T> __Assign<Expr<T>> for Repr<T> {
     }
 }
 
-impl<T> __Ref<T> for Repr<T> {
-    fn __ref<'a>(&'a self) -> Expr<&'a T> {
+impl<'a, T> __Ref<'a, T, Expr<&'a T>> for Repr<T> {
+    fn __ref(&'a self) -> Expr<&'a T> {
         let r = &self.0;
         Expr::new(quote! { &#r })
     }
 }
 
-impl<T> __RefMut<T> for Repr<T> {
-    fn __mut<'a>(&'a mut self) -> Expr<&'a mut T> {
+impl<'a, T> __RefMut<'a, T, Expr<&'a mut T>> for Repr<T> {
+    fn __mut(&'a mut self) -> Expr<&'a mut T> {
         let r = &self.0;
         Expr::new(quote! { &mut #r })
     }
