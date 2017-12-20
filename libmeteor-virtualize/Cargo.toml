@@ -5,5 +5,7 @@ authors = ["msiglreith <m.siglreith@gmail.com>"]
 workspace = ".."
 
 [dependencies]
-quote = "0.3"
+quote = { git = 'https://github.com/dtolnay/quote'}
 proc-macro2 = "0.1"
+syn = { path = "../../syn" , features = ["full", "extra-traits"] } # TODO
+synom = { path = "../../syn/synom" } # TODO

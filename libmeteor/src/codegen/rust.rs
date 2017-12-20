@@ -4,7 +4,7 @@ use quote::Tokens;
 use std::marker::PhantomData;
 use std::ops::Not;
 
-use __ExprBlock;
+use expr::__ExprBlock;
 use ops::*;
 
 pub struct Lit<T>(Tokens, PhantomData<T>);
@@ -80,7 +80,8 @@ impl __PartialEq<Expr<bool>> for Repr<bool> {
     }
 }
 
-impl<T> __Assign<Repr<T>, Stmt> for Repr<T> {
+impl<T> __Assign<Repr<T>> for Repr<T> {
+    type Output = Stmt;
     fn assign(self, rhs: Repr<T>) -> Stmt {
         let lhs = self.0;
         let rhs = rhs.0;
@@ -88,7 +89,8 @@ impl<T> __Assign<Repr<T>, Stmt> for Repr<T> {
     }
 }
 
-impl<T> __Assign<Expr<T>, Stmt> for Repr<T> {
+impl<T> __Assign<Expr<T>> for Repr<T> {
+    type Output = Stmt;
     fn assign(self, rhs: Expr<T>) -> Stmt {
         let lhs = self.0;
         let rhs = rhs.0;
@@ -96,14 +98,16 @@ impl<T> __Assign<Expr<T>, Stmt> for Repr<T> {
     }
 }
 
-impl<'a, T> __Ref<'a, T, Expr<&'a T>> for Repr<T> {
+impl<'a, T: 'a> __Ref<'a, T> for Repr<T> {
+    type Output = Expr<&'a T>;
     fn __ref(&'a self) -> Expr<&'a T> {
         let r = &self.0;
         Expr::new(quote! { &#r })
     }
 }
 
-impl<'a, T> __RefMut<'a, T, Expr<&'a mut T>> for Repr<T> {
+impl<'a, T: 'a> __RefMut<'a, T> for Repr<T> {
+    type Output = Expr<&'a mut T>;
     fn __mut(&'a mut self) -> Expr<&'a mut T> {
         let r = &self.0;
         Expr::new(quote! { &mut #r })
@@ -126,7 +130,7 @@ fn basic() {
     let y = unsafe { Repr::<u32>::new(quote!{b}) };
     let z = unsafe { Repr::<bool>::new(quote!{c}) };
 
-    assert_eq!(z.assign(x.eq(y)).0.to_string(), "c = a == b");
+    assert_eq!(z.assign(x.eq(&y)).0.to_string(), "c = a == b");
 }
 
 #[test]
@@ -139,7 +143,7 @@ fn expr_block() {
     {
         __tokens.append("{");
         let k =__ExprBlock::__stmnt_local(|| { 2 + 4 }, &mut __tokens);
-        let x =__ExprBlock::__stmnt_local(|| { x.eq(y) }, &mut __tokens);
+        let x =__ExprBlock::__stmnt_local(|| { x.eq(&y) }, &mut __tokens);
         __tokens.append("}");
     }
 

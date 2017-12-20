@@ -1,8 +1,10 @@
 //! Virtualization implementation for normal, 'unstaged' Rust
+use quote::Tokens;
 
 use std::cmp::{PartialEq};
 use std::ops::{Add, Sub, Not};
 
+use expr::{__ExprBlock};
 use ops::{__Not, __PartialEq, __Add, __Sub};
 
 impl<T> __Not for T
@@ -42,5 +44,12 @@ where
     type Output = <T as Sub<RHS>>::Output;
     fn sub(self, rhs: RHS) -> Self::Output {
         Sub::sub(self, rhs)
+    }
+}
+
+impl<F, T> __ExprBlock for F where F: FnOnce() -> T {
+    type Return = T;
+    default fn __stmnt_local(self, tokens: &mut Tokens) -> Self::Return {
+        self()
     }
 }

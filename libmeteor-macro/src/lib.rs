@@ -12,7 +12,6 @@ extern crate rustfmt_nightly as rustfmt;
 use proc_macro::TokenStream;
 use proc_macro2::Term;
 use syn::*;
-use syn::FilterAttrs;
 use quote::Tokens;
 use quote::ToTokens;
 use std::str;
@@ -93,7 +92,7 @@ pub fn staged(_: TokenStream, input: TokenStream) -> TokenStream {
                         {}
                     }}
                 }}
-            ", input, gen_fn.to_string());
+            ", gen_fn.to_string());
             // panic!("{:?}", fn_impl.to_string());
             fn_impl.to_string().parse().unwrap()
         }
