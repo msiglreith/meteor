@@ -1,14 +1,14 @@
 
-pub trait __Not {
+pub trait __Not<T> {
     type Output;
-    fn not(self) -> Self::Output;
+    fn not(&mut self, expr: T) -> Self::Output;
 }
 
-pub trait __PartialEq<RHS> {
-    type Output: __Not<Output=Self::Output>;
+pub trait __PartialEq<LHS, RHS> {
+    type Output;
 
-    fn eq(&self, &RHS) -> Self::Output;
-    fn ne(&self, other: &RHS) -> Self::Output { self.eq(other).not() }
+    fn eq(&mut self, lhs: &LHS, rhs: &RHS) -> <Self as __PartialEq<LHS,RHS>>::Output;
+    fn ne(&mut self, lhs: &LHS, rhs: &RHS) -> <Self as __PartialEq<LHS,RHS>>::Output;
 }
 
 pub trait __Assign<RHS> {

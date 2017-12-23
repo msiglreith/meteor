@@ -1,7 +1,6 @@
 
 use quote::Tokens;
 
-pub trait __ExprBlock {
-    type Return;
-    fn __stmnt_local(self, tokens: &mut Tokens) -> Self::Return;
+pub trait __ExprBlock<T> {
+    fn __stmnt_local(&mut self, expr: T) -> T;
 }

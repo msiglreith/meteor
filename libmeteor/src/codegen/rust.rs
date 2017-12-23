@@ -7,6 +7,14 @@ use std::ops::Not;
 use expr::__ExprBlock;
 use ops::*;
 
+use super::Codegen;
+
+pub struct RustGen {
+    tokens: Tokens,
+}
+
+impl Codegen for RustGen { }
+
 pub struct Lit<T>(Tokens, PhantomData<T>);
 
 impl Lit<u8> {
@@ -37,46 +45,42 @@ impl Stmt {
     }
 }
 
-impl<T> __Not for Repr<T>
+impl<T> __Not<Repr<T>> for RustGen
 where
     T: Not,
 {
     type Output = Expr<T::Output>;
-    fn not(self) -> Self::Output {
-        let r = self.0;
+    fn not(&mut self, expr: Repr<T>) -> Self::Output {
+        let r = expr.0;
         Expr::new(quote! { !#r })
     }
 }
 
-impl<T> __Not for Expr<T>
+impl<T> __Not<Expr<T>> for RustGen
 where
     T: Not,
 {
     type Output = Expr<T::Output>;
-    fn not(self) -> Self::Output {
-        let e = self.0;
-        Expr::new(quote! { !#e })
+    fn not(&mut self, expr: Expr<T>) -> Self::Output {
+        let r = expr.0;
+        Expr::new(quote! { !#r })
     }
 }
 
-impl<T, U> __PartialEq<Repr<U>> for Repr<T>
+impl<T, U> __PartialEq<Expr<T>, Expr<U>> for RustGen
 where
     T: PartialEq<U>,
 {
     type Output = Expr<bool>;
-    fn eq(&self, repr: &Repr<U>) -> Expr<bool> {
-        let lhs = &self.0;
-        let rhs = &repr.0;
+    fn eq(&mut self, lhs: &Expr<T>, rhs: &Expr<U>) -> Expr<bool> {
+        let lhs = &lhs.0;
+        let rhs = &rhs.0;
         Expr::new(quote! { #lhs == #rhs })
     }
-}
-
-impl __PartialEq<Expr<bool>> for Repr<bool> {
-    type Output = Expr<bool>;
-    fn eq(&self, expr: &Expr<bool>) -> Expr<bool> {
-        let lhs = &self.0;
-        let rhs = &expr.0;
-        Expr::new(quote! { #lhs == #rhs })
+    fn ne(&mut self, lhs: &Expr<T>, rhs: &Expr<U>) -> Expr<bool> {
+        let lhs = &lhs.0;
+        let rhs = &rhs.0;
+        Expr::new(quote! { #lhs != #rhs })
     }
 }
 
@@ -114,13 +118,12 @@ impl<'a, T: 'a> __RefMut<'a, T> for Repr<T> {
     }
 }
 
-impl<F, T> __ExprBlock for F where F: FnOnce() -> Expr<T> {
-    fn __stmnt_local(self, tokens: &mut Tokens) -> Self::Return {
-        let ret = self();
-        tokens.append(quote!{ let x = });
-        tokens.append(ret.0.clone());
-        tokens.append(";");
-        ret
+impl<T> __ExprBlock<Expr<T>> for RustGen {
+    fn __stmnt_local(&mut self, expr: Expr<T>) -> Expr<T> {
+        self.tokens.append(quote!{ let x = }); // TODO
+        self.tokens.append(expr.0.clone());
+        self.tokens.append(";");
+        expr
     }
 }
 
@@ -142,8 +145,8 @@ fn expr_block() {
 
     {
         __tokens.append("{");
-        let k =__ExprBlock::__stmnt_local(|| { 2 + 4 }, &mut __tokens);
-        let x =__ExprBlock::__stmnt_local(|| { x.eq(&y) }, &mut __tokens);
+        let k =__ExprBlock::__stmnt_local(2 + 4, &mut __tokens);
+        let y =__ExprBlock::__stmnt_local(x.eq(&y), &mut __tokens);
         __tokens.append("}");
     }
 
