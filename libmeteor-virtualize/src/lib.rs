@@ -43,6 +43,7 @@ impl Virtualize for ExprKind {
             ExprKind::Binary(ref expr) => expr.virtualize(tokens),
             ExprKind::Cast(ref expr) => expr.virtualize(tokens),
             ExprKind::Lit(ref expr) => expr.virtualize(tokens),
+            ExprKind::Block(ref expr) => expr.virtualize(tokens),
             _ => (), // TODO
         }
     }
@@ -122,11 +123,34 @@ impl Virtualize for ExprTup {
 
 impl Virtualize for ExprBinary {
     fn virtualize(&self, tokens: &mut Tokens) {
-        self.op.virtualize(tokens);
-        tokens::Paren::default().surround(tokens, |tokens| {
-            self.left.virtualize(tokens);
-            tokens::Comma::default().to_tokens(tokens);
-            self.right.virtualize(tokens);
+        // {
+        //     let __args = [left, right];
+        //     __op(__args[0], __args[1])
+        // }
+
+        let mut lhs = Tokens::new();
+        self.left.virtualize(&mut lhs);
+        let mut rhs = Tokens::new();
+        self.right.virtualize(&mut rhs);
+
+        tokens::Brace::default().surround(tokens, |tokens| {
+            tokens.append_tokens(
+                quote! {
+                    let __args = [
+                        #lhs,
+                        #rhs
+                    ];
+                }
+            );
+
+            self.op.virtualize(tokens);
+            tokens::Paren::default().surround(tokens, |tokens| {
+                tokens.append_tokens(
+                    quote! {
+                        &mut __codegen, __args[0], __args[1]
+                    }
+                );
+            })
         })
     }
 }
@@ -219,7 +243,10 @@ impl Virtualize for ExprClosure {
 
 impl Virtualize for ExprBlock {
     fn virtualize(&self, tokens: &mut Tokens) {
-        // TODO
+        if let Unsafety::Unsafe(_) = self.unsafety {
+            unimplemented!()
+        }
+        self.block.virtualize(tokens);
     }
 }
 
@@ -322,14 +349,21 @@ impl Virtualize for ExprTry {
 impl Virtualize for syn::Block {
     fn virtualize(&self, tokens: &mut Tokens) {
         self.brace_token.surround(tokens, |tokens| {
-            tokens.append_tokens(quote! { __tokens.append("{"); });
+            let mut result = false;
+            tokens.append_tokens(quote! { __Codegen::begin_scope(&mut __codegen); });
             for stmt in &self.stmts {
                 match *stmt {
                     Stmt::Local(ref local) => {
                         if let Some(ref init) = local.init {
+                            // panic!("{:?}", init);
+                            let mut init_tokens = Tokens::new();
+                            init.virtualize(&mut init_tokens);
                             tokens.append_tokens(
                                 quote! {
-                                    let temp = __ExprBlock::__stmnt_local(|| #init, &mut __tokens);
+                                    let temp = { // TODO: identifier
+                                        let __args = #init_tokens;
+                                        __ExprBlock::__stmnt_local(&mut __codegen, __args)
+                                    };
                                 }
                             );
                         } else {
@@ -344,7 +378,12 @@ impl Virtualize for syn::Block {
                         unimplemented!()
                     }
                     Stmt::Expr(ref expr) => {
-                        unimplemented!()
+                        let mut expr_tokens = Tokens::new();
+                        expr.virtualize(&mut expr_tokens);
+                        tokens.append_tokens(quote! {
+                            let __result = #expr_tokens;
+                        });
+                        result = true;
                     }
                     Stmt::Semi(ref _expr, ref _semi) => {
                         unimplemented!()
@@ -354,7 +393,10 @@ impl Virtualize for syn::Block {
                     }
                 }
             }
-            tokens.append_tokens(quote! { __tokens.append("}"); });
+            tokens.append_tokens(quote! { __Codegen::end_scope(&mut __codegen); });
+            if result {
+                tokens.append_tokens(quote! { __result });
+            }
         });
     }
 }

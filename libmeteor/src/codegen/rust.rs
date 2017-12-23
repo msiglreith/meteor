@@ -13,7 +13,14 @@ pub struct RustGen {
     tokens: Tokens,
 }
 
-impl Codegen for RustGen { }
+impl Codegen for RustGen {
+    fn begin_scope(&mut self) {
+        self.tokens.append("{");
+    }
+    fn end_scope(&mut self) {
+        self.tokens.append("}");
+    }
+}
 
 pub struct Lit<T>(Tokens, PhantomData<T>);
 
