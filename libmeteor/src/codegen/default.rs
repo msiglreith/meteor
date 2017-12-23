@@ -1,11 +1,11 @@
 //! Virtualization implementation for normal, 'unstaged' Rust
-use quote::Tokens;
 
 use std::cmp::{PartialEq};
 use std::ops::{Add, Sub, Not};
 
 use expr::{__ExprBlock};
 use ops::{__Not, __PartialEq, __Add, __Sub};
+
 use super::Codegen;
 
 impl<CG, T> __Not<T> for CG
@@ -33,23 +33,25 @@ where
     }
 }
 
-impl<T, RHS> __Add<RHS> for T
+impl<CG, LHS, RHS> __Add<LHS, RHS> for CG
 where
-    T: Add<RHS>,
+    CG: Codegen,
+    LHS: Add<RHS>,
 {
-    type Output = <T as Add<RHS>>::Output;
-    fn add(self, rhs: RHS) -> Self::Output {
-        Add::add(self, rhs)
+    type Output = <LHS as Add<RHS>>::Output;
+    fn add(&mut self, lhs: LHS, rhs: RHS) -> Self::Output {
+        Add::add(lhs, rhs)
     }
 }
 
-impl<T, RHS> __Sub<RHS> for T
+impl<CG, LHS, RHS> __Sub<LHS, RHS> for CG
 where
-    T: Sub<RHS>,
+    CG: Codegen,
+    LHS: Sub<RHS>,
 {
-    type Output = <T as Sub<RHS>>::Output;
-    fn sub(self, rhs: RHS) -> Self::Output {
-        Sub::sub(self, rhs)
+    type Output = <LHS as Sub<RHS>>::Output;
+    fn sub(&mut self, lhs: LHS, rhs: RHS) -> Self::Output {
+        Sub::sub(lhs, rhs)
     }
 }
 

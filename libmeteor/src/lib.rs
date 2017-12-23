@@ -6,5 +6,3 @@ extern crate quote;
 pub mod codegen;
 pub mod expr;
 pub mod ops;
-
-use quote::Tokens;

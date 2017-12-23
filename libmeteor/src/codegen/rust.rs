@@ -25,7 +25,6 @@ impl Lit<u8> {
 
 pub struct Repr<T>(Tokens, PhantomData<T>);
 pub struct Expr<T>(Tokens, PhantomData<T>);
-pub struct Stmt(Tokens);
 
 impl<T> Repr<T> {
     pub unsafe fn new(tt: Tokens) -> Self {
@@ -36,12 +35,6 @@ impl<T> Repr<T> {
 impl<T> Expr<T> {
     fn new(tt: Tokens) -> Self {
         Expr(tt, PhantomData)
-    }
-}
-
-impl Stmt {
-    fn new(tt: Tokens) -> Self {
-        Stmt(tt)
     }
 }
 
@@ -84,21 +77,21 @@ where
     }
 }
 
-impl<T> __Assign<Repr<T>> for Repr<T> {
-    type Output = Stmt;
-    fn assign(self, rhs: Repr<T>) -> Stmt {
-        let lhs = self.0;
+impl<T> __Assign<Repr<T>, Repr<T>> for RustGen {
+    type Output = Expr<()>;
+    fn assign(&mut self, lhs: Repr<T>, rhs: Repr<T>) -> Expr<()> {
+        let lhs = lhs.0;
         let rhs = rhs.0;
-        Stmt::new(quote! { #lhs = #rhs })
+        Expr::new(quote! { #lhs = #rhs })
     }
 }
 
-impl<T> __Assign<Expr<T>> for Repr<T> {
-    type Output = Stmt;
-    fn assign(self, rhs: Expr<T>) -> Stmt {
-        let lhs = self.0;
+impl<T> __Assign<Repr<T>, Expr<T>> for RustGen {
+    type Output = Expr<()>;
+    fn assign(&mut self, lhs: Repr<T>, rhs: Expr<T>) -> Expr<()> {
+        let lhs = lhs.0;
         let rhs = rhs.0;
-        Stmt::new(quote! { #lhs = #rhs })
+        Expr::new(quote! { #lhs = #rhs })
     }
 }
 

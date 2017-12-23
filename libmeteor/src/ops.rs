@@ -11,19 +11,19 @@ pub trait __PartialEq<LHS, RHS> {
     fn ne(&mut self, lhs: &LHS, rhs: &RHS) -> <Self as __PartialEq<LHS,RHS>>::Output;
 }
 
-pub trait __Assign<RHS> {
+pub trait __Assign<LHS, RHS> {
     type Output;
-    fn assign(self, RHS) -> Self::Output;
+    fn assign(&mut self, lhs: LHS, rhs: RHS) -> Self::Output;
 }
 
-pub trait __Add<RHS> {
+pub trait __Add<LHS, RHS> {
     type Output;
-    fn add(self, rhs: RHS) -> Self::Output;
+    fn add(&mut self, lhs: LHS, rhs: RHS) -> Self::Output;
 }
 
-pub trait __Sub<RHS> {
+pub trait __Sub<LHS, RHS> {
     type Output;
-    fn sub(self, rhs: RHS) -> Self::Output;
+    fn sub(&mut self, lhs: LHS, rhs: RHS) -> Self::Output;
 }
 
 pub trait __Ref<'a, T> {
