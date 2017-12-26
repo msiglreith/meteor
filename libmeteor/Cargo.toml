@@ -6,3 +6,4 @@ workspace = ".."
 
 [dependencies]
 quote = "0.3"
+syn = { path = "../../syn" , features = ["full", "extra-traits"] } # TODO

@@ -44,6 +44,7 @@ impl Virtualize for ExprKind {
             ExprKind::Cast(ref expr) => expr.virtualize(tokens),
             ExprKind::Lit(ref expr) => expr.virtualize(tokens),
             ExprKind::Block(ref expr) => expr.virtualize(tokens),
+            ExprKind::Tup(ref expr) => expr.virtualize(tokens),
             _ => (), // TODO
         }
     }
@@ -52,36 +53,38 @@ impl Virtualize for ExprKind {
 impl Virtualize for BinOp {
     fn virtualize(&self, tokens: &mut Tokens) {
         use syn::BinOp::*;
-        match *self {
-            Add(_) => { "__add".virtualize(tokens); }
-            Sub(_) => { "__sub".virtualize(tokens); },
-            Mul(_) => { "__mul".virtualize(tokens); },
-            Div(_) => { "__div".virtualize(tokens); },
-            Rem(_) => { "__rem".virtualize(tokens); },
-            And(_) => { "__and".virtualize(tokens); },
-            Or(_) => { "__or".virtualize(tokens); },
-            BitXor(_) => { "__bitxor".virtualize(tokens); },
-            BitAnd(_) => { "__bitand".virtualize(tokens); },
-            BitOr(_) => { "__bitor".virtualize(tokens); },
-            Shl(_) => { "__shl".virtualize(tokens); },
-            Shr(_) => { "__shr".virtualize(tokens); },
-            Eq(_) => { "__eq".virtualize(tokens); },
-            Lt(_) => { "__lt".virtualize(tokens); },
-            Le(_) => { "__le".virtualize(tokens); },
-            Ne(_) => { "__ne".virtualize(tokens); },
-            Ge(_) => { "__ge".virtualize(tokens); },
-            Gt(_) => { "__gt".virtualize(tokens); },
-            AddEq(_) => { "__add_assign".virtualize(tokens); },
-            SubEq(_) => { "__sub_assign".virtualize(tokens); },
-            MulEq(_) => { "__mul_assign".virtualize(tokens); },
-            DivEq(_) => { "__div_assign".virtualize(tokens); },
-            RemEq(_) => { "__rem_assign".virtualize(tokens); },
-            BitXorEq(_) => { "__bitxor_assign".virtualize(tokens); },
-            BitAndEq(_) => { "__bitand_assign".virtualize(tokens); },
-            BitOrEq(_) => { "__bitor_assign".virtualize(tokens); },
-            ShlEq(_) => { "__shl_assign".virtualize(tokens); },
-            ShrEq(_) => { "__shr_assign".virtualize(tokens); },
-        }
+        tokens.append_tokens(
+            match *self {
+            Add(_) => quote! { __Add::__add },
+            Sub(_) => quote! { __Sub::__sub },
+            Mul(_) => quote! { __Mul::__mul },
+            Div(_) => quote! { __Div::__div },
+            // TODO
+            Rem(_) => quote! { __rem },
+            And(_) => quote! { __and },
+            Or(_) => quote! { __or },
+            BitXor(_) => quote! { __bitxor },
+            BitAnd(_) => quote! { __bitand },
+            BitOr(_) => quote! { __bitor },
+            Shl(_) => quote! { __shl },
+            Shr(_) => quote! { __shr },
+            Eq(_) => quote! { __eq },
+            Lt(_) => quote! { __lt },
+            Le(_) => quote! { __le },
+            Ne(_) => quote! { __ne },
+            Ge(_) => quote! { __ge },
+            Gt(_) => quote! { __gt },
+            AddEq(_) => quote! { __add_assign },
+            SubEq(_) => quote! { __sub_assign },
+            MulEq(_) => quote! { __mul_assign },
+            DivEq(_) => quote! { __div_assign },
+            RemEq(_) => quote! { __rem_assign },
+            BitXorEq(_) => quote! { __bitxor_assign },
+            BitAndEq(_) => quote! { __bitand_assign },
+            BitOrEq(_) => quote! { __bitor_assign },
+            ShlEq(_) => quote! { __shl_assign },
+            ShrEq(_) => quote! { __shr_assign },
+        });
     }
 }
 
@@ -117,15 +120,38 @@ impl Virtualize for ExprMethodCall {
 
 impl Virtualize for ExprTup {
     fn virtualize(&self, tokens: &mut Tokens) {
-        // TODO
+        // {
+        //     let __args = (elem0, elem1, ..);
+        //     __op(__args)
+        // }
+
+        let args = self.args
+            .iter()
+            .map(|arg| {
+                let mut tks = Tokens::new();
+                arg.item().virtualize(&mut tks);
+                tks
+            })
+            .collect::<Vec<_>>();
+
+        tokens::Brace::default().surround(tokens, |tokens| {
+            tokens.append_tokens(
+                quote! {
+                    let args = (
+                        #(#args,)*
+                    );
+                    __ExprTuple::__expr(&mut __codegen, args)
+                }
+            );
+        })
     }
 }
 
 impl Virtualize for ExprBinary {
     fn virtualize(&self, tokens: &mut Tokens) {
         // {
-        //     let __args = [left, right];
-        //     __op(__args[0], __args[1])
+        //     let __args = (left, right);
+        //     __op(__args.0, __args.1)
         // }
 
         let mut lhs = Tokens::new();
@@ -136,18 +162,17 @@ impl Virtualize for ExprBinary {
         tokens::Brace::default().surround(tokens, |tokens| {
             tokens.append_tokens(
                 quote! {
-                    let __args = [
+                    let __args = (
                         #lhs,
                         #rhs
-                    ];
+                    );
                 }
             );
-
             self.op.virtualize(tokens);
             tokens::Paren::default().surround(tokens, |tokens| {
                 tokens.append_tokens(
                     quote! {
-                        &mut __codegen, __args[0], __args[1]
+                        &mut __codegen, __args.0, __args.1
                     }
                 );
             })
@@ -349,27 +374,43 @@ impl Virtualize for ExprTry {
 impl Virtualize for syn::Block {
     fn virtualize(&self, tokens: &mut Tokens) {
         self.brace_token.surround(tokens, |tokens| {
-            let mut result = false;
             tokens.append_tokens(quote! { __Codegen::begin_scope(&mut __codegen); });
+            let mut result = false;
             for stmt in &self.stmts {
                 match *stmt {
                     Stmt::Local(ref local) => {
+                        let mut pat = Tokens::new();
+                        local.pat.to_tokens(&mut pat);
+
+                        let pat_construct = match *local.pat {
+                            syn::Pat::Wild(_) => quote! {
+                                Pat::Wild
+                            },
+                            syn::Pat::Ident(ref ident) => {
+                                let ident = ident.ident.to_string();
+                                quote! {
+                                    Pat::Ident(#ident)
+                                }
+                            },
+                            _ => panic!("{:?}", local.pat),
+                        };
+
                         if let Some(ref init) = local.init {
                             // panic!("{:?}", init);
                             let mut init_tokens = Tokens::new();
                             init.virtualize(&mut init_tokens);
                             tokens.append_tokens(
                                 quote! {
-                                    let temp = { // TODO: identifier
+                                    let #pat = {
                                         let __args = #init_tokens;
-                                        __ExprBlock::__stmnt_local(&mut __codegen, __args)
+                                        __ExprBlock::__stmnt_local(&mut __codegen, #pat_construct, __args)
                                     };
                                 }
                             );
                         } else {
                             tokens.append_tokens(
                                 quote! {
-                                    let temp;
+                                    let #pat;
                                 }
                             );
                         }
@@ -378,12 +419,15 @@ impl Virtualize for syn::Block {
                         unimplemented!()
                     }
                     Stmt::Expr(ref expr) => {
+                        result = true;
                         let mut expr_tokens = Tokens::new();
                         expr.virtualize(&mut expr_tokens);
                         tokens.append_tokens(quote! {
-                            let __result = #expr_tokens;
+                            let __result = {
+                                let __args = #expr_tokens;
+                                __ExprBlock::__expr(&mut __codegen, __args)
+                            };
                         });
-                        result = true;
                     }
                     Stmt::Semi(ref _expr, ref _semi) => {
                         unimplemented!()
@@ -393,10 +437,17 @@ impl Virtualize for syn::Block {
                     }
                 }
             }
-            tokens.append_tokens(quote! { __Codegen::end_scope(&mut __codegen); });
-            if result {
-                tokens.append_tokens(quote! { __result });
+
+            if !result {
+                tokens.append_tokens(quote! {
+                    let __result = __ExprBlock::__expr(&mut __codegen, Expr::empty());
+                });
             }
+
+            tokens.append_tokens(quote! {
+                __Codegen::end_scope(&mut __codegen);
+                __result
+            });
         });
     }
 }
