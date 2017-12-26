@@ -13,4 +13,4 @@ The library is an very early state, basically rendering it unusable. A lot of is
 
 ### Motivation
 
-The project is motivated by the [`Scala LMS`](https://scala-lms.github.io//index.html) project and follows it's virtualization approach. Implementing the virtualization process purely as library without compiler support would be very appealing for end-users. 'Virtualization' denotes the process of representing a parsed representation of Rust code in an overridable representation. 
+The project is motivated by the [`Scala LMS`](https://scala-lms.github.io//index.html) project and follows its virtualization approach. Implementing the virtualization process purely as library without compiler support would be very appealing for end-users. 'Virtualization' denotes the process of representing a parsed representation of Rust code in an overridable representation. 
